@@ -1,65 +1,59 @@
-import { createContext, useEffect, useState } from "react";
+import { createContext, useState } from "react";
 import run from "./clone";
 
 export const Content = createContext();
 
 const ContextProvider = (props) => {
+  const [input, setInput] = useState("");
+  const [recentPrompt, setRecentPrompt] = useState("");
+  const [prevPrompts, setPrevPrompts] = useState([
+    {
+      text: "Hi, I am ChatGPT, a state-of-the-art language model developed by OpenAI. I'm designed to understand and generate human-like text based on the input I receive. You can ask me questions, have conversations, seek information, or even request assistance with various tasks. Just let me know how I can help you!",
+      isBot: true,
+    },
+  ]);
+  const [showResult, setShowResult] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [resultData, setResultData] = useState("");
 
-    const [input,setInput] = useState("");
-    const [recentPrompt,setRecentPrompt] = useState("");
-    const [prevPrompts,setPrevPromts] = useState([
-        {
-            text: "Hi, I am ChatGPT, a state-of-the-art language model developed by OpenAI. I'm designed to understand and generate human-like text based on the input I receive. You can ask me questions, have conversations, seek information, or even request assistance with varous tasks. Just let me know how I can help you!",
-            isBot: true
-        }
+  const onSent = async () => {
+    setResultData("");
+    setLoading(true);
+    setShowResult(true);
+    setRecentPrompt(input);
+
+    const text = input;
+    setInput("");
+    setPrevPrompts((prev) => [
+      ...prev,
+      { text, isBot: false },
     ]);
-    const [showResult,setShowResult] = useState(false);
-    const [loading,setLoading] = useState(false);
-    const [resultData,setResultData] = useState("");
 
-    
-
-
-  const onSent = async (prompt) => {
-
-     setResultData("")
-     setLoading(true)
-     setShowResult(true)
-     setRecentPrompt(input)
-     setPrevPromts(prev=>[...prev,input])
-     const text = input;
-     setInput("")
-     setPrevPromts([
-        ...prevPrompts,
-        {text, isBot:false}
-     ])
-    const response = await run(input);
+    const response = await run(text);
     let responseArray = response.split("**");
-    let newResponse= "";
-    for(let i=0; i<responseArray.length; i++)
-        {
-            if(i === 0 || i%2 !== 1){
-                newResponse += responseArray[i];
-            }
-            else{
-                newResponse += <b>${responseArray[i]}</b>;
-            }
-        }
-    let newResponse2 = newResponse.split("*").join("</br>")
-    setPrevPromts([
-        ...prevPrompts,
-        { text: input, isBot: false},
-        { text: newResponse2 , isBot: true}
-    ])
+    let newResponse = "";
 
-      setResultData(newResponse2)
-      setLoading(false);
-      setInput("")
+    for (let i = 0; i < responseArray.length; i++) {
+      if (i === 0 || i % 2 !== 1) {
+        newResponse += responseArray[i];
+      } else {
+        newResponse += `<b>${responseArray[i]}</b>`;
+      }
+    }
+
+    let newResponse2 = newResponse.split("*").join("</br>");
+    setPrevPrompts((prev) => [
+      ...prev,
+      { text: newResponse2, isBot: true },
+    ]);
+
+    setResultData(newResponse2);
+    setLoading(false);
   };
 
   const newChat = () => {
     setInput("");
-    setPrevPromts([
+    setPrevPrompts([
       {
         text: "Hi, I am ChatGPT, a state-of-the-art language model developed by OpenAI. I'm designed to understand and generate human-like text based on the input I receive. You can ask me questions, have conversations, seek information, or even request assistance with various tasks. Just let me know how I can help you!",
         isBot: true,
@@ -72,7 +66,7 @@ const ContextProvider = (props) => {
 
   const contextValue = {
     prevPrompts,
-    setPrevPromts,
+    setPrevPrompts,
     onSent,
     setRecentPrompt,
     recentPrompt,
@@ -81,12 +75,13 @@ const ContextProvider = (props) => {
     resultData,
     input,
     setInput,
-    newChat
-    // Add any values or functions you want to provide to the context here
+    newChat,
   };
 
   return (
-    <Content.Provider value={contextValue}>{props.children}</Content.Provider>
+    <Content.Provider value={contextValue}>
+      {props.children}
+    </Content.Provider>
   );
 };
 
